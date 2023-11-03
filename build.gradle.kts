@@ -20,6 +20,10 @@ dependencies {
     // (in a separate module for demo project and in testMain).
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
+    implementation(compose.material3)
+//    implementation(compose.material3-window-size-class)
+//    implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
+
 }
 
 compose.desktop {
