@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.sharp.AccountCircle
 import androidx.compose.material.icons.sharp.Home
@@ -20,10 +21,12 @@ import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 var mainWindow: FrameWindowScope? = null
 
@@ -32,15 +35,20 @@ var mainWindow: FrameWindowScope? = null
 fun App() {
 
     var text by remember { mutableStateOf("Hello, World!") }
-    var drawerState = rememberDrawerState(DrawerValue.Closed)
+    var currDrawerState = rememberDrawerState(DrawerValue.Closed)
     var isMenuExpanded by remember { mutableStateOf(false) }
-    var isMenuExpanded2 by remember { mutableStateOf(false) }
+    var isAccountMenuExpanded by remember { mutableStateOf(false) }
+
+    val scaffoldState = rememberScaffoldState()
+    val appScope = rememberCoroutineScope()
 
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
         shapes = Shapes(small = MaterialTheme.shapes.small, medium = MaterialTheme.shapes.medium, large = MaterialTheme.shapes.large)
     ) {
         Scaffold (
+            scaffoldState = scaffoldState,
+
             topBar = {
                 TopAppBar(
                     title = { Text("Work Monitoring") },
@@ -51,105 +59,29 @@ fun App() {
 //                        .height(40.dp)
                         .shadow(elevation = 3.dp, shape = MaterialTheme.shapes.small),
                     actions = {
-                        IconButton(onClick = { isMenuExpanded2 = true }) {
-                            Icon(Icons.Sharp.List, contentDescription = null)
+                        IconButton(onClick = { isAccountMenuExpanded = true }) {
+                            Icon(Icons.Filled.AccountCircle, contentDescription = null)
                         }
 
                         DropdownMenu(
-                            expanded = isMenuExpanded2,
-                            onDismissRequest = { isMenuExpanded2 = false },
+                            expanded = isAccountMenuExpanded,
+                            onDismissRequest = { isAccountMenuExpanded = false },
                         ) {
                             DropdownMenuItem(onClick = { /* Handle refresh! */ }) {
-                                Text("Refresh")
+                                Text("Login")
                             }
                             DropdownMenuItem(onClick = { /* Handle settings! */ }) {
-                                Text("Settings")
-                            }
-                            Divider()
-                            DropdownMenuItem(onClick = { /* Handle send feedback! */ }) {
-                                Text("Send Feedback")
-                            }
-                            DropdownMenuItem(onClick = { /* Handle send feedback! */ }) {
-                                Text("Send Feedback")
+                                Text("Logout")
                             }
                         }
-
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-
-                        IconButton(onClick = {
-                            isMenuExpanded = true
-                        }) {
-                            Icon(Icons.Filled.Menu, contentDescription = null)
-                            DropdownMenu(
-                                expanded = isMenuExpanded,
-                                onDismissRequest = { isMenuExpanded = false },
-//                            modifier = Modifier
-//                                .border(1.dp, MaterialTheme.colorScheme.onPrimary)
-//                                .padding(1.dp)
-//                                .shadow(elevation = 2.dp, shape = MaterialTheme.shapes.small),
-                            ) {
-                                DropdownMenuItem(onClick = { /* Handle refresh! */ }) {
-                                    Text("Refresh")
-                                }
-                                DropdownMenuItem(onClick = { /* Handle settings! */ }) {
-                                    Text("Settings")
-                                }
-                                Divider()
-                                DropdownMenuItem(onClick = { /* Handle send feedback! */ }) {
-                                    Text("Send Feedback")
-                                }
-                            }
-                        }
-
-
-
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Sharp.AccountCircle, contentDescription = null)
-                        }
-
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-//                            drawerState.open()
+                            appScope.launch { scaffoldState.drawerState.open() }
                         }) {
                             Icon(Icons.Sharp.Home, contentDescription = null)
                         }
                     }
-
-
                 )
             },
             bottomBar = {
@@ -173,6 +105,8 @@ fun App() {
                     Text("Item 3")
                 }
             }
+
+
         ) { innerPadding ->
             Column(
 
