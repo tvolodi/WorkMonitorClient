@@ -2,14 +2,19 @@ package auth
 
 import com.auth0.jwt.JWT
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.json.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.util.*
+import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -132,9 +137,12 @@ class AuthManager {
         coroutineScope.launch {
             server!!.stop(1, 5, TimeUnit.SECONDS)
         }
+
+        println("Got code ")
         return code
     }
 
+    @OptIn(InternalAPI::class)
     private suspend fun getToken(
         domain: String,
         clientId:String,
@@ -149,6 +157,19 @@ class AuthManager {
                 json()
             }
         }
+
+        client.post("https://$domain/oauth/token")
+
+        val response = client.post{
+            url { protocol = URLProtocol.HTTPS; host = domain; encodedPath = "/oauth/token" }
+            headers { append("content-type", "application/x-www-form-urlencoded") }
+            body = "grant_type=authorization_code&client_id=$clientId&code_verifier=$verifier" +
+                    "&code=$code&redirect_uri=$encodedRedirectUri"
+        }.body<TokenResponse>()
+
+//        println("response: $response")
+
+        _userId.value = extractUserId(response.accessToken)
     }
 
     private fun createChallenge(verifier: String): String {
