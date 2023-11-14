@@ -158,7 +158,7 @@ class AuthManager {
             }
         }
 
-        client.post("https://$domain/oauth/token")
+//        client.post("https://$domain/oauth/token")
 
         val response = client.post{
             url { protocol = URLProtocol.HTTPS; host = domain; encodedPath = "/oauth/token" }
@@ -167,9 +167,24 @@ class AuthManager {
                     "&code=$code&redirect_uri=$encodedRedirectUri"
         }.body<TokenResponse>()
 
-//        println("response: $response")
+        println("response: $response")
 
-        _userId.value = extractUserId(response.accessToken)
+        _userId.value = extractUserId(response.idToken)
+
+        Tokens.accessToken = response.accessToken
+        Tokens.refreshToken = response.refreshToken
+        Tokens.idToken = response.idToken
+
+        println("Id Token: ${response.idToken}")
+
+
+        var payload = JWT.decode(response.idToken).payload
+
+        var claims = JWT.decode(response.idToken).claims.forEach{ println("Claim: ${it.key} ${it.value}")}
+
+        println("Payload: $payload")
+
+
     }
 
     private fun createChallenge(verifier: String): String {
@@ -179,5 +194,10 @@ class AuthManager {
         val digest = md.digest()
         return org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(digest)
     }
+}
 
+data object Tokens{
+    var accessToken: String = ""
+    var refreshToken: String = ""
+    var idToken: String = ""
 }
