@@ -5,14 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c33b013c-80b8-454a-ae07-12a5423f93fa" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/auth/AuthManager.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/auth/TokenResponse.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/composables/LoginView.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/composables/ViewLce.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/auth/AuthManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/auth/AuthManager.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,6 +45,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
@@ -69,7 +72,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "AuthUI",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "D:/dev/Kotlin/AuthCompose-main",
     "project.structure.last.edited": "SDKs",
@@ -132,8 +135,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Kotlin script (Beta).build.gradle.kts" />
         <item itemvalue="Gradle.WorkMonitorClient [package]" />
+        <item itemvalue="Kotlin script (Beta).build.gradle.kts" />
         <item itemvalue="Gradle.WorkMonitorClient [packageReleaseMsi]" />
       </list>
     </recent_temporary>
@@ -150,11 +153,38 @@
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="origin/master" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>

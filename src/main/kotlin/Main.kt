@@ -26,9 +26,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import auth.AuthManager
 import kotlinx.coroutines.launch
 
 var mainWindow: FrameWindowScope? = null
+
+val domain = "dev-e3r1z7qh4iztrv5x.us.auth0.com"
+val clientId = "LKi23IJ0wTFZ3aAV0dwQUyRvFKdsA4zW"
+val redirectUri = "http://localhost:5789/callback"
+val scope = "openid offline_access"
+val audience = "http://localhost/test-api"
 
 @Composable
 @Preview
@@ -38,6 +45,7 @@ fun App() {
     var currDrawerState = rememberDrawerState(DrawerValue.Closed)
     var isMenuExpanded by remember { mutableStateOf(false) }
     var isAccountMenuExpanded by remember { mutableStateOf(false) }
+    val authManager = remember { AuthManager() }
 
     val scaffoldState = rememberScaffoldState()
     val appScope = rememberCoroutineScope()
@@ -67,7 +75,17 @@ fun App() {
                             expanded = isAccountMenuExpanded,
                             onDismissRequest = { isAccountMenuExpanded = false },
                         ) {
-                            DropdownMenuItem(onClick = { /* Handle refresh! */ }) {
+                            DropdownMenuItem(onClick = {
+                                appScope.launch {
+                                    authManager.authenticateUser(
+                                        domain = domain,
+                                        clientId = clientId,
+                                        redirectUri = redirectUri,
+                                        scope = scope,
+                                        audience = audience,
+                                    )
+                                }
+                            }) {
                                 Text("Login")
                             }
                             DropdownMenuItem(onClick = { /* Handle settings! */ }) {
