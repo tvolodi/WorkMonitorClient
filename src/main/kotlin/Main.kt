@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import auth.AuthManager
 import kotlinx.coroutines.launch
+import services.uploadFile
+import java.time.LocalDateTime
 
 var mainWindow: FrameWindowScope? = null
 
@@ -47,6 +49,8 @@ fun App() {
     val scaffoldState = rememberScaffoldState()
     val appScope = rememberCoroutineScope()
 
+
+
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
         shapes = Shapes(small = MaterialTheme.shapes.small, medium = MaterialTheme.shapes.medium, large = MaterialTheme.shapes.large)
@@ -64,8 +68,12 @@ fun App() {
 //                        .height(40.dp)
                         .shadow(elevation = 3.dp, shape = MaterialTheme.shapes.small),
                     actions = {
-                        IconButton(onClick = {  }) {
-                            Icon(Icons.Sharp.Email, contentDescription = null)
+                        IconButton(onClick = {
+                            appScope.launch {
+                                takeScreenshot()
+                            }
+                        }) {
+                            Icon (painterResource("ScreenshotIcon.svg"), contentDescription = null, modifier = Modifier.padding(8.dp))
                         }
 
                         IconButton(onClick = { isAccountMenuExpanded = true }) {
@@ -235,7 +243,7 @@ fun main() = application {
 //
 //}
 
-fun takeScreenshot(){
+suspend fun takeScreenshot(){
     var width = 0
     var height = 0
     val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
@@ -247,6 +255,15 @@ fun takeScreenshot(){
     }
 
     val screenRectangle = Rectangle(0, 0, width, height)
+    val screenRectangle2 = Rectangle(-1920, 0, width, height)
     val captureImage = Robot().createScreenCapture(screenRectangle)
-    ImageIO.write(captureImage, "png", File(".png"))
+    val captureImage2 = Robot().createScreenCapture(screenRectangle2)
+    val fileName = LocalDateTime.now().toString().replace(":", "-") + ".png"
+    val fileName2 = LocalDateTime.now().toString().replace(":", "-") + "_2.png"
+
+    ImageIO.write(captureImage, "png", File(fileName))
+    ImageIO.write(captureImage2, "png", File(fileName2))
+
+    uploadFile(fileName2)
+
 }
