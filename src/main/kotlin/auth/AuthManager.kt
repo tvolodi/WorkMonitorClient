@@ -19,7 +19,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.awt.Desktop
+import java.io.File
 import java.lang.RuntimeException
 import java.net.URI
 import java.net.URLEncoder
@@ -158,8 +163,6 @@ class AuthManager {
             }
         }
 
-//        client.post("https://$domain/oauth/token")
-
         val response = client.post{
             url { protocol = URLProtocol.HTTPS; host = domain; encodedPath = "/oauth/token" }
             headers { append("content-type", "application/x-www-form-urlencoded") }
@@ -175,16 +178,48 @@ class AuthManager {
         Tokens.refreshToken = response.refreshToken
         Tokens.idToken = response.idToken
 
+
         println("Id Token: ${response.idToken}")
 
 
         var payload = JWT.decode(response.idToken).payload
 
-        var claims = JWT.decode(response.idToken).claims.forEach{ println("Claim: ${it.key} ${it.value}")}
+        JWT.decode(Tokens.accessToken).claims.forEach{
+            when(it.key){
+                "sub" -> Tokens.userAuthId = it.value.toString()
+                "email" -> Tokens.email = it.value.toString()
+            }
+        }
 
-        println("Payload: $payload")
 
 
+        JWT.decode(response.idToken).claims.forEach{ println("Claim: ${it.key} ${it.value}")}
+    }
+
+    @OptIn(InternalAPI::class)
+    private suspend fun refreshToken(
+        domain: String,
+        clientId: String,
+        redirectUri: String,
+        audience: String,
+
+    ){
+        val client = HttpClient{
+            install(ContentNegotiation){
+                json()
+            }
+        }
+
+//        val encodedRedirectUri = URLEncoder.encode(redirectUri, Charsets.UTF_8)
+        val response = client.post{
+            url { protocol = URLProtocol.HTTPS; host = domain; encodedPath = "/oauth/token" }
+            headers { append("content-type", "application/x-www-form-urlencoded") }
+
+            body = "grant_type=refresh_token" +
+                    "&client_id=$clientId" +
+                    "&refresh_token=${Tokens.refreshToken}"
+        }.body<TokenResponse>()
+        println("response.token: ${response.accessToken}")
     }
 
     private fun createChallenge(verifier: String): String {
@@ -194,9 +229,28 @@ class AuthManager {
         val digest = md.digest()
         return org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(digest)
     }
+
+    private fun saveTokens(){
+        val jsonString = Json.encodeToString(Tokens)
+        File("tokens.json").writeText(jsonString)
+    }
+
+    private fun restoreTokens(){
+        val jsonString = File("tokens.json").readText()
+        var tokens = Json.decodeFromString<Tokens>(jsonString)
+        Tokens.accessToken = tokens.accessToken
+        Tokens.refreshToken = tokens.refreshToken
+        Tokens.idToken = tokens.idToken
+        Tokens.email = tokens.email
+        Tokens.userAuthId = tokens.userAuthId
+
+    }
 }
 
+@Serializable
 data object Tokens{
+    var userAuthId: String = ""
+    var email: String = ""
     var accessToken: String = ""
     var refreshToken: String = ""
     var idToken: String = ""
