@@ -8,10 +8,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.sharp.AccountCircle
-import androidx.compose.material.icons.sharp.Home
-import androidx.compose.material.icons.sharp.Info
-import androidx.compose.material.icons.sharp.List
+import androidx.compose.material.icons.sharp.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -28,6 +25,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import auth.AuthManager
 import kotlinx.coroutines.launch
+import services.uploadFile
+import java.time.LocalDateTime
 
 var mainWindow: FrameWindowScope? = null
 
@@ -35,7 +34,7 @@ val domain = "dev-e3r1z7qh4iztrv5x.us.auth0.com"
 val clientId = "LKi23IJ0wTFZ3aAV0dwQUyRvFKdsA4zW"
 val redirectUri = "http://localhost:5789/callback"
 val scope = "openid offline_access"
-val audience = "http://localhost/test-api"
+val audience = "https://www.vt-ptm.org/wm-api"
 
 @Composable
 @Preview
@@ -49,6 +48,8 @@ fun App() {
 
     val scaffoldState = rememberScaffoldState()
     val appScope = rememberCoroutineScope()
+
+
 
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
@@ -67,6 +68,14 @@ fun App() {
 //                        .height(40.dp)
                         .shadow(elevation = 3.dp, shape = MaterialTheme.shapes.small),
                     actions = {
+                        IconButton(onClick = {
+                            appScope.launch {
+                                takeScreenshot()
+                            }
+                        }) {
+                            Icon (painterResource("ScreenshotIcon.svg"), contentDescription = null, modifier = Modifier.padding(8.dp))
+                        }
+
                         IconButton(onClick = { isAccountMenuExpanded = true }) {
                             Icon(Icons.Filled.AccountCircle, contentDescription = null)
                         }
@@ -153,19 +162,7 @@ fun App() {
 //    MaterialTheme {
 //        Button(onClick = {
 //
-//            var width = 0
-//            var height = 0
-//            val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-//            val gDevices = ge.screenDevices
-//            for(dev in gDevices){
-//                val displayMode = dev.displayMode
-//                width += displayMode.width
-//                height = displayMode.height
-//            }
-//
-//            val screenRectangle = Rectangle(0, 0, width, height)
-//            val captureImage = Robot().createScreenCapture(screenRectangle)
-//            ImageIO.write(captureImage, "png", File("ScreenShot.png"))
+
 //
 //            text = "Hello, Desktop!"
 //        }) {
@@ -245,3 +242,28 @@ fun main() = application {
 //    }
 //
 //}
+
+suspend fun takeScreenshot(){
+    var width = 0
+    var height = 0
+    val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+    val gDevices = ge.screenDevices
+    for(dev in gDevices){
+        val displayMode = dev.displayMode
+        width += displayMode.width
+        height = displayMode.height
+    }
+
+    val screenRectangle = Rectangle(0, 0, width, height)
+    val screenRectangle2 = Rectangle(-1920, 0, width, height)
+    val captureImage = Robot().createScreenCapture(screenRectangle)
+    val captureImage2 = Robot().createScreenCapture(screenRectangle2)
+    val fileName = LocalDateTime.now().toString().replace(":", "-") + ".png"
+    val fileName2 = LocalDateTime.now().toString().replace(":", "-") + "_2.png"
+
+    ImageIO.write(captureImage, "png", File(fileName))
+    ImageIO.write(captureImage2, "png", File(fileName2))
+
+    uploadFile(fileName2)
+
+}

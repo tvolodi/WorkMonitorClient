@@ -23,6 +23,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation("commons-codec:commons-codec:1.16.0")
+    implementation("io.ktor:ktor-client-auth:2.3.6")
     implementation("io.ktor:ktor-client-core:2.3.6")
     implementation("io.ktor:ktor-client-serialization:2.3.6")
     implementation("io.ktor:ktor-client-cio:2.3.6")
