@@ -63,13 +63,13 @@ suspend fun uploadFile(fileName: String) {
         }
         body = MultiPartFormDataContent(
             formData {
+                // Section name should be the same as parameter in ASP.Net controller => List<IFormFile> files (!)
                 append("files", File(fileName).readBytes(), Headers.build {
                     append(HttpHeaders.ContentType, "image/png")
                     append(HttpHeaders.ContentDisposition, "file; filename=$fileName")
                 })
             }
         )}
-
 
     println("response.status: ${response.status}")
 
