@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.compose")
     kotlin("plugin.serialization") version "1.9.20"
+
 }
 
 group = "org.vt-ptm"
@@ -33,6 +34,10 @@ dependencies {
     implementation("io.ktor:ktor-server-core:2.3.6")
     implementation("io.ktor:ktor-server-netty:2.3.6")
     implementation("com.auth0:java-jwt:4.4.0")
+
+    implementation("org.xerial:sqlite-jdbc:3.44.0.0")
+
+    implementation("com.google.devtools.ksp:symbol-processing-api:1.9.20-1.0.14")
 
 //    implementation(compose.material3-window-size-class)
 //    implementation("androidx.compose.material3:material3-window-size-class:1.1.2")

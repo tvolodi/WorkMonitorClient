@@ -1,32 +1,24 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.sharp.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.window.*
-import java.awt.*
-import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
+import androidx.compose.material.icons.sharp.Home
+import androidx.compose.material.icons.sharp.Info
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.*
 import auth.AuthManager
 import kotlinx.coroutines.launch
-import services.uploadFile
-import java.time.LocalDateTime
+import services.runScheduledScreenshot
+import services.takeScreenshot
 
 var mainWindow: FrameWindowScope? = null
 
@@ -48,8 +40,6 @@ fun App() {
 
     val scaffoldState = rememberScaffoldState()
     val appScope = rememberCoroutineScope()
-
-
 
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
@@ -158,17 +148,6 @@ fun App() {
             }
         }
     }
-
-//    MaterialTheme {
-//        Button(onClick = {
-//
-
-//
-//            text = "Hello, Desktop!"
-//        }) {
-//            Text(text)
-//        }
-//    }
 }
 
 fun main() = application {
@@ -206,6 +185,9 @@ fun main() = application {
             }
         )
     }
+
+    // Run a screenshot task every periodLength minutes
+    runScheduledScreenshot(15)
 }
 
 //fun createTray(app: ApplicationScope, isMainWindowOpen: MutableState<Boolean>): Unit {
@@ -243,27 +225,3 @@ fun main() = application {
 //
 //}
 
-suspend fun takeScreenshot(){
-    var width = 0
-    var height = 0
-    val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-    val gDevices = ge.screenDevices
-    for(dev in gDevices){
-        val displayMode = dev.displayMode
-        width += displayMode.width
-        height = displayMode.height
-    }
-
-    val screenRectangle = Rectangle(0, 0, width, height)
-    val screenRectangle2 = Rectangle(-1920, 0, width, height)
-    val captureImage = Robot().createScreenCapture(screenRectangle)
-    val captureImage2 = Robot().createScreenCapture(screenRectangle2)
-    val fileName = LocalDateTime.now().toString().replace(":", "-") + ".png"
-    val fileName2 = LocalDateTime.now().toString().replace(":", "-") + "_2.png"
-
-    ImageIO.write(captureImage, "png", File(fileName))
-    ImageIO.write(captureImage2, "png", File(fileName2))
-
-    uploadFile(fileName2)
-
-}
