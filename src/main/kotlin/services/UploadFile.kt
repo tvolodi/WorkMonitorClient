@@ -17,7 +17,6 @@ import java.io.File
 import java.net.URLEncoder
 import java.util.UUID
 
-
 @OptIn(InternalAPI::class)
 suspend fun uploadFile(fileName: String) {
 
@@ -40,20 +39,6 @@ suspend fun uploadFile(fileName: String) {
         }
     }
 
-//    val response = client.submitFormWithBinaryData(
-//        url = "http://localhost:5218/api/UploadFile",
-//        formData = formData {
-//            val fileUuidName = UUID.randomUUID().toString()
-////            append("file", File(fileUuidName))
-//            val fileNameTmp = "2023-11-15T12-49-47.225004500_2.png"
-//            append("description", "screenshot")
-//            append("image", File(fileNameTmp).readBytes(), Headers.build {
-//                append(HttpHeaders.ContentType, "image/png")
-//                append(HttpHeaders.ContentDisposition, "file; filename=$fileNameTmp")
-//            })
-//        }
-//    )
-
     val fileNameTmp = "2023-11-15T14-51-14.090359400.png"
 
     val response = client.post("http://localhost:5218/api/UploadFile"){
@@ -72,25 +57,4 @@ suspend fun uploadFile(fileName: String) {
         )}
 
     println("response.status: ${response.status}")
-
-//    try {
-//        val testResponse = client.get {
-//            url { protocol = URLProtocol.HTTP; host = "localhost"; encodedPath = "/WeatherForecast"; port = 5218 }
-//            headers {
-//                append("content-type", "application/json")
-//                append("Authorization", "Bearer ${Tokens.accessToken}")
-//            }
-//        }
-//        val responseBody: ByteArray = testResponse.body()
-//        val file = File("testResponse.json")
-//        file.writeBytes(responseBody)
-//
-////        println("Test response: ${testResponse.body<Any>()}")
-//
-//    } catch (e: Exception) {
-//        println("Exception: ${e.printStackTrace()}")
-//    }
-
-
-//    println( "response.status ${response.status}" )
 }
