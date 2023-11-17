@@ -4,7 +4,6 @@ import com.auth0.jwt.JWT
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.json.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -13,16 +12,16 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.util.*
 import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import utils.GlobalConfig
 import java.awt.Desktop
 import java.io.File
 import java.lang.RuntimeException
@@ -34,7 +33,7 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 
-class AuthManager {
+object AuthManager {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -45,24 +44,18 @@ class AuthManager {
     private val _userId = MutableStateFlow<String?>(null)
     val userId = _userId.asStateFlow()
 
-    fun authenticateUser(
-        domain: String,
-        clientId: String,
-        redirectUri: String,
-        scope: String,
-        audience: String,
-    ) {
+    fun authenticateUser() {
         val job = coroutineScope.launch {
             try {
                 val verifier = createVerifier()
                 val challenge = createChallenge(verifier)
                 val url = createLoginUrl(
-                    domain = domain,
-                    clientId = clientId,
-                    redirectUri = redirectUri,
-                    scope = scope,
+                    domain = GlobalConfig.authConfig["auth_domain"].toString(),
+                    clientId = GlobalConfig.authConfig["auth_client_id"].toString(),
+                    redirectUri = GlobalConfig.authConfig["auth_redirect_uri"].toString(),
+                    scope = GlobalConfig.authConfig["auth_scope"].toString(),
                     challenge = challenge,
-                    audience = audience,
+                    audience = GlobalConfig.authConfig["auth_audience"].toString(),
                 )
 
                 println("Launching URL: $url")
@@ -74,11 +67,11 @@ class AuthManager {
                 val code = waitForCallback()
 
                 getToken(
-                    domain = domain,
-                    clientId = clientId,
+//                    domain = domain,
+//                    clientId = clientId,
                     verifier = verifier,
                     code = code,
-                    redirectUri = redirectUri,
+//                    redirectUri = redirectUri,
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -149,13 +142,13 @@ class AuthManager {
 
     @OptIn(InternalAPI::class)
     private suspend fun getToken(
-        domain: String,
-        clientId:String,
+//        domain: String,
+//        clientId:String,
         verifier: String,
         code: String,
-        redirectUri: String,
+//        redirectUri: String,
     ) {
-        val encodedRedirectUri = URLEncoder.encode(redirectUri, Charsets.UTF_8)
+        val encodedRedirectUri = URLEncoder.encode(GlobalConfig.authConfig["auth_redirect_uri"], Charsets.UTF_8)
 
         val client = HttpClient{
             install(ContentNegotiation){
@@ -164,45 +157,19 @@ class AuthManager {
         }
 
         val response = client.post{
-            url { protocol = URLProtocol.HTTPS; host = domain; encodedPath = "/oauth/token" }
+            url { protocol = URLProtocol.HTTPS; host = GlobalConfig.authConfig["auth_domain"].toString(); encodedPath = "/oauth/token" }
             headers { append("content-type", "application/x-www-form-urlencoded") }
-            body = "grant_type=authorization_code&client_id=$clientId&code_verifier=$verifier" +
+            body = "grant_type=authorization_code&client_id=${GlobalConfig.authConfig["auth_client_id"]}&code_verifier=$verifier" +
                     "&code=$code&redirect_uri=$encodedRedirectUri"
         }.body<TokenResponse>()
 
+        // Debug
         println("response: $response")
 
-        _userId.value = extractUserId(response.idToken)
-
-        Tokens.accessToken = response.accessToken
-        Tokens.refreshToken = response.refreshToken
-        Tokens.idToken = response.idToken
-
-
-        println("Id Token: ${response.idToken}")
-
-
-        var payload = JWT.decode(response.idToken).payload
-
-        JWT.decode(Tokens.accessToken).claims.forEach{
-            when(it.key){
-                "sub" -> Tokens.userAuthId = it.value.toString()
-                "email" -> Tokens.email = it.value.toString()
-            }
-        }
-
-
-
-        JWT.decode(response.idToken).claims.forEach{ println("Claim: ${it.key} ${it.value}")}
+        saveTokens(response)
     }
 
-    @OptIn(InternalAPI::class)
-    private suspend fun refreshToken(
-        domain: String,
-        clientId: String,
-        redirectUri: String,
-        audience: String,
-
+    suspend fun refreshToken(
     ){
         val client = HttpClient{
             install(ContentNegotiation){
@@ -210,15 +177,23 @@ class AuthManager {
             }
         }
 
-//        val encodedRedirectUri = URLEncoder.encode(redirectUri, Charsets.UTF_8)
         val response = client.post{
+
+            var domain = GlobalConfig.authConfig["auth_domain"].toString()
+            var clientId = GlobalConfig.authConfig["auth_client_id"].toString()
+            var refreshToken = GlobalConfig.tokens["refreshToken"].toString()
+
             url { protocol = URLProtocol.HTTPS; host = domain; encodedPath = "/oauth/token" }
             headers { append("content-type", "application/x-www-form-urlencoded") }
 
-            body = "grant_type=refresh_token" +
-                    "&client_id=$clientId" +
-                    "&refresh_token=${Tokens.refreshToken}"
+            setBody("grant_type=refresh_token" +
+                    "&client_id=${clientId}" +
+                    "&refresh_token=${refreshToken}")
         }.body<TokenResponse>()
+
+        saveTokens(response)
+
+        // Debug
         println("response.token: ${response.accessToken}")
     }
 
@@ -230,28 +205,42 @@ class AuthManager {
         return org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(digest)
     }
 
-    private fun saveTokens(){
-        val jsonString = Json.encodeToString(Tokens)
-        File("tokens.json").writeText(jsonString)
+    private val json = Json { encodeDefaults = true }
+
+    private fun saveTokens(response: TokenResponse) {
+
+        GlobalConfig.tokens["accessToken"] = response.accessToken
+        GlobalConfig.tokens["refreshToken"] = response.refreshToken
+        GlobalConfig.tokens["idToken"] = response.idToken
+
+        JWT.decode(response.accessToken).claims.forEach{
+            when(it.key){
+                "sub" -> GlobalConfig.tokens["userAuthId"] = it.value.toString()
+                "https://www.vt-ptm.org/email" -> GlobalConfig.tokens["email"] = it.value.toString()
+            }
+        }
+
+        val jsonString = Json.encodeToString(GlobalConfig.tokens)
+
+        val userHome = System.getProperty("user.home")
+        val tokenFile = File(userHome, "tokens.json")
+
+        tokenFile.writeText(jsonString)
     }
 
-    private fun restoreTokens(){
-        val jsonString = File("tokens.json").readText()
-        var tokens = Json.decodeFromString<Tokens>(jsonString)
-        Tokens.accessToken = tokens.accessToken
-        Tokens.refreshToken = tokens.refreshToken
-        Tokens.idToken = tokens.idToken
-        Tokens.email = tokens.email
-        Tokens.userAuthId = tokens.userAuthId
+    fun restoreTokens(){
+
+        val userHome = System.getProperty("user.home")
+//        val tokensFilePath = "$userHome/tokens.json"
+
+        val tokenFile = File(userHome, "tokens.json")
+        if(!tokenFile.exists()) return
+
+        val jsonString = tokenFile.readText()
+        if(jsonString == "") return
+        val tokens = Json.decodeFromString<MutableMap<String, String>>(jsonString)
+
+        GlobalConfig.tokens = tokens
 
     }
-}
-
-@Serializable
-data object Tokens{
-    var userAuthId: String = ""
-    var email: String = ""
-    var accessToken: String = ""
-    var refreshToken: String = ""
-    var idToken: String = ""
 }

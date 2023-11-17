@@ -17,8 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import auth.AuthManager
 import kotlinx.coroutines.launch
-import services.runScheduledScreenshot
-import services.takeScreenshot
+import utils.GlobalConfig
+import utils.runScheduledScreenshot
+import utils.takeScreenshot
 
 var mainWindow: FrameWindowScope? = null
 
@@ -36,7 +37,7 @@ fun App() {
     var currDrawerState = rememberDrawerState(DrawerValue.Closed)
     var isMenuExpanded by remember { mutableStateOf(false) }
     var isAccountMenuExpanded by remember { mutableStateOf(false) }
-    val authManager = remember { AuthManager() }
+    val authManager = remember { AuthManager }
 
     val scaffoldState = rememberScaffoldState()
     val appScope = rememberCoroutineScope()
@@ -76,13 +77,7 @@ fun App() {
                         ) {
                             DropdownMenuItem(onClick = {
                                 appScope.launch {
-                                    authManager.authenticateUser(
-                                        domain = domain,
-                                        clientId = clientId,
-                                        redirectUri = redirectUri,
-                                        scope = scope,
-                                        audience = audience,
-                                    )
+                                    authManager.authenticateUser()
                                 }
                             }) {
                                 Text("Login")
@@ -129,16 +124,6 @@ fun App() {
 
             ) {
                 Text(text = "Primary: $text", color = MaterialTheme.colorScheme.primary)
-                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inversePrimary)
-                Text(text = "OnPrimary: $text", color = MaterialTheme.colorScheme.onPrimary)
-                Text(text = "Secondary: $text", color = MaterialTheme.colorScheme.secondary)
-//                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inverseSecondary)
-                Text(text = "Background: $text", color = MaterialTheme.colorScheme.background)
-                Text(text = "Outline: $text", color = MaterialTheme.colorScheme.outline)
-                Text(text = "Outline: $text", color = MaterialTheme.colorScheme.onPrimary)
-                Text(text = "Error: $text", color = MaterialTheme.colorScheme.error)
-                Text(text = "Surface: $text", color = MaterialTheme.colorScheme.surface)
-                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inverseSurface)
 
                 Button(onClick = {
                     text = "Hello, Desktop!"
@@ -151,6 +136,13 @@ fun App() {
 }
 
 fun main() = application {
+
+    // Restore configuration from file
+    GlobalConfig.restoreAuthConfig()
+
+    // Restore tokens from file
+    AuthManager.restoreTokens()
+
     val isOpen = remember { mutableStateOf(true) }
     var windowScope: FrameWindowScope
 
@@ -189,39 +181,4 @@ fun main() = application {
     // Run a screenshot task every periodLength minutes
     runScheduledScreenshot(15)
 }
-
-//fun createTray(app: ApplicationScope, isMainWindowOpen: MutableState<Boolean>): Unit {
-//
-//    var tray = SystemTray.getSystemTray()
-//    val popup: PopupMenu =  PopupMenu()
-//    // val url = System::class.java.getResource("/images/new.png")
-//    val url = "Flat-Icons.com-Flat-Clock.16.png"
-//    val image: Image = Toolkit.getDefaultToolkit().getImage(url)
-//    val trayIcon = TrayIcon(image)
-//    val aboutItem = MenuItem("About")
-//
-//    val displayItem = MenuItem("Display")
-//    displayItem.addActionListener {
-//        isMainWindowOpen.value = true
-//    }
-//
-//    val takeScreenItem = MenuItem("Take Screenshot")
-//    val exitItem = MenuItem("Exit")
-//    exitItem.addActionListener {
-//        app.exitApplication()
-//    }
-//
-//    popup.add(aboutItem)
-//    popup.add(displayItem)
-//    popup.add(takeScreenItem)
-//    popup.add(exitItem)
-//    trayIcon.setPopupMenu(popup)
-//
-//    try {
-//        tray.add(trayIcon)
-//    } catch (e: AWTException) {
-//        println("TrayIcon could not be added.")
-//    }
-//
-//}
 

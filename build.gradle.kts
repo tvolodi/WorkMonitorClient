@@ -23,6 +23,7 @@ dependencies {
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
     implementation("commons-codec:commons-codec:1.16.0")
     implementation("io.ktor:ktor-client-auth:2.3.6")
     implementation("io.ktor:ktor-client-core:2.3.6")

