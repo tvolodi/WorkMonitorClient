@@ -223,24 +223,24 @@ object AuthManager {
         val jsonString = Json.encodeToString(GlobalConfig.tokens)
 
         val userHome = System.getProperty("user.home")
-        val tokenFile = File(userHome, "tokens.json")
+        val tokenFile = File(userHome, "wm_tokens.json")
 
         tokenFile.writeText(jsonString)
     }
 
-    fun restoreTokens(){
-
-        val userHome = System.getProperty("user.home")
-//        val tokensFilePath = "$userHome/tokens.json"
-
-        val tokenFile = File(userHome, "tokens.json")
-        if(!tokenFile.exists()) return
-
-        val jsonString = tokenFile.readText()
-        if(jsonString == "") return
-        val tokens = Json.decodeFromString<MutableMap<String, String>>(jsonString)
-
-        GlobalConfig.tokens = tokens
-
-    }
+//    fun restoreTokens(){
+//
+//        val userHome = System.getProperty("user.home")
+////        val tokensFilePath = "$userHome/tokens.json"
+//
+//        val tokenFile = File(userHome, "tokens.json")
+//        if(!tokenFile.exists()) return
+//
+//        val jsonString = tokenFile.readText()
+//        if(jsonString == "") return
+//        val tokens = Json.decodeFromString<MutableMap<String, String>>(jsonString)
+//
+//        GlobalConfig.tokens = tokens
+//
+//    }
 }

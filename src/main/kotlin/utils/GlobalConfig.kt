@@ -12,17 +12,32 @@ data object GlobalConfig {
     @Serializable
     var tokens: MutableMap<String, String> = mutableMapOf()
 
-    fun restoreAuthConfig() {
+    @Serializable
+    var appConfig: MutableMap<String, String> = mutableMapOf()
+
+//    fun readAuthConfig():  {
+//        val userHome = System.getProperty("user.home")
+//        val file = File(userHome, "wm_auth_config.json")
+//
+//        if(!file.exists()) return
+//
+//        val jsonString = file.readText()
+//        if(jsonString == "") return
+//        val configMap = Json.decodeFromString<MutableMap<String, String>>(jsonString)
+//
+//        authConfig = configMap
+//    }
+
+    fun readConfig(fileName: String): MutableMap<String, String> {
         val userHome = System.getProperty("user.home")
-        val tokenFile = File(userHome, "wm_auth_config.json")
+        val file = File(userHome, fileName)
 
-        if(!tokenFile.exists()) return
+        if(!file.exists()) return mutableMapOf()
 
-        val jsonString = tokenFile.readText()
-        if(jsonString == "") return
+        val jsonString = file.readText()
+        if(jsonString == "") return mutableMapOf()
         val configMap = Json.decodeFromString<MutableMap<String, String>>(jsonString)
-
-        authConfig = configMap
+        return configMap
     }
 
 
