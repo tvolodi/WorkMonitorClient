@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.sharp.Home
 import androidx.compose.material.icons.sharp.Info
 import androidx.compose.material3.MaterialTheme
@@ -16,9 +18,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import auth.AuthManager
+import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.decompose.extensions.compose.jetbrains.lifecycle.LifecycleController
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlinx.coroutines.launch
-import services.runScheduledScreenshot
-import services.takeScreenshot
+import utils.GlobalConfig
+import utils.runScheduledScreenshot
+import utils.takeScreenshot
+import views.AppUserList
+import views.ProjectList
 
 var mainWindow: FrameWindowScope? = null
 
@@ -32,14 +41,18 @@ val audience = "https://www.vt-ptm.org/wm-api"
 @Preview
 fun App() {
 
+    val navigation = remember {StackNavigation<AppChilds>()}
+
     var text by remember { mutableStateOf("Hello, World!") }
     var currDrawerState = rememberDrawerState(DrawerValue.Closed)
     var isMenuExpanded by remember { mutableStateOf(false) }
     var isAccountMenuExpanded by remember { mutableStateOf(false) }
-    val authManager = remember { AuthManager() }
+    val authManager = remember { AuthManager }
 
     val scaffoldState = rememberScaffoldState()
     val appScope = rememberCoroutineScope()
+
+    var selectedView  = remember { mutableStateOf(MainViews.USER_VIEW) }
 
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
@@ -60,6 +73,21 @@ fun App() {
                     actions = {
                         IconButton(onClick = {
                             appScope.launch {
+                                selectedView.value = MainViews.USER_VIEW
+                            }
+
+                        }) {
+                            Icon(Icons.Filled.Person, contentDescription = null)
+                        }
+
+                        IconButton(onClick = {
+                            selectedView.value = MainViews.PROJECT_VIEW
+                        }) {
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = null)
+                        }
+
+                        IconButton(onClick = {
+                            appScope.launch {
                                 takeScreenshot()
                             }
                         }) {
@@ -76,13 +104,7 @@ fun App() {
                         ) {
                             DropdownMenuItem(onClick = {
                                 appScope.launch {
-                                    authManager.authenticateUser(
-                                        domain = domain,
-                                        clientId = clientId,
-                                        redirectUri = redirectUri,
-                                        scope = scope,
-                                        audience = audience,
-                                    )
+                                    authManager.authenticateUser()
                                 }
                             }) {
                                 Text("Login")
@@ -125,103 +147,100 @@ fun App() {
 
 
         ) { innerPadding ->
-            Column(
 
-            ) {
-                Text(text = "Primary: $text", color = MaterialTheme.colorScheme.primary)
-                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inversePrimary)
-                Text(text = "OnPrimary: $text", color = MaterialTheme.colorScheme.onPrimary)
-                Text(text = "Secondary: $text", color = MaterialTheme.colorScheme.secondary)
-//                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inverseSecondary)
-                Text(text = "Background: $text", color = MaterialTheme.colorScheme.background)
-                Text(text = "Outline: $text", color = MaterialTheme.colorScheme.outline)
-                Text(text = "Outline: $text", color = MaterialTheme.colorScheme.onPrimary)
-                Text(text = "Error: $text", color = MaterialTheme.colorScheme.error)
-                Text(text = "Surface: $text", color = MaterialTheme.colorScheme.surface)
-                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inverseSurface)
-
-                Button(onClick = {
-                    text = "Hello, Desktop!"
-                }) {
-                    Text("Click me!")
+            when (selectedView.value) {
+                MainViews.USER_VIEW -> {
+                    AppUserList()
                 }
+
+                MainViews.PROJECT_VIEW -> {
+                    ProjectList()
+                }
+
+                else -> {
+                    Text("Hello, World!")}
             }
+
+//            ChildStack(
+//                source = navigation,
+//                initialStack = { listOf(AppUserView) },
+//                handleBackButton = true,
+//                animation = stackAnimation(fade() + scale()),
+//            ) { child ->
+//                when (child) {
+//                    is AppUserView -> {
+//                        AppUserList()
+//                    }
+//
+//                    is ProjectView -> {
+//                        ProjectList()
+//                    }
+//                }
+//            }
         }
     }
 }
 
-fun main() = application {
-    val isOpen = remember { mutableStateOf(true) }
-    var windowScope: FrameWindowScope
+fun main(){
+
+    val lifecycle = LifecycleRegistry()
+
+    val rootComponentContext = DefaultComponentContext(lifecycle = lifecycle)
+
+    application {
+
+        val windowState = rememberWindowState()
+        LifecycleController(lifecycle, windowState)
+
+        // Restore configuration from file
+        GlobalConfig.authConfig = GlobalConfig.readConfig("wm_auth_config.json")
+        GlobalConfig.appConfig = GlobalConfig.readConfig("wm_app_config.json")
+        GlobalConfig.tokens = GlobalConfig.readConfig("wm_tokens.json")
+
+        val isOpen = remember { mutableStateOf(true) }
+        var windowScope: FrameWindowScope
 
 //    val image: Image = BufferedImage()// Toolkit.getDefaultToolkit().getImage(url)
 
-    if(isOpen.value) {
-        Window(title = "Work Monitoring",
-            onCloseRequest = {
-            isOpen.value = false
-        }) { //  ::exitApplication
-            mainWindow = this
-            App()
-        }
-    }
+        if(isOpen.value) {
+            Window(title = "Work Monitoring",
+                state = windowState,
+                onCloseRequest = {
+                    isOpen.value = false
+                }) { //  ::exitApplication
+                mainWindow = this
 
-    if(isTraySupported) {
-        Tray(
-            icon = painterResource("Flat-Icons.com-Flat-Clock.16.png"),
-            menu = {
-                Item("About", onClick = {
-
-                })
-                Item("Display", onClick = {
-                    isOpen.value = true
-                })
-                Item("Take Screenshot", onClick = {
-
-                })
-                Item("Exit", onClick = {
-                    exitApplication()
-                })
+                CompositionLocalProvider(LocalComponentContext provides rootComponentContext) {
+                    ProvideComponentContext(rootComponentContext) {
+                        App()
+                    }
+                }
+//                App()
             }
-        )
+        }
+
+        if(isTraySupported) {
+            Tray(
+                icon = painterResource("Flat-Icons.com-Flat-Clock.16.png"),
+                menu = {
+                    Item("About", onClick = {
+
+                    })
+                    Item("Display", onClick = {
+                        isOpen.value = true
+                    })
+                    Item("Take Screenshot", onClick = {
+
+                    })
+                    Item("Exit", onClick = {
+                        exitApplication()
+                    })
+                }
+            )
+        }
+
+        // Run a screenshot task every periodLength minutes
+        runScheduledScreenshot(15)
     }
-
-    // Run a screenshot task every periodLength minutes
-    runScheduledScreenshot(15)
 }
-
-//fun createTray(app: ApplicationScope, isMainWindowOpen: MutableState<Boolean>): Unit {
-//
-//    var tray = SystemTray.getSystemTray()
-//    val popup: PopupMenu =  PopupMenu()
-//    // val url = System::class.java.getResource("/images/new.png")
-//    val url = "Flat-Icons.com-Flat-Clock.16.png"
-//    val image: Image = Toolkit.getDefaultToolkit().getImage(url)
-//    val trayIcon = TrayIcon(image)
-//    val aboutItem = MenuItem("About")
-//
-//    val displayItem = MenuItem("Display")
-//    displayItem.addActionListener {
-//        isMainWindowOpen.value = true
-//    }
-//
-//    val takeScreenItem = MenuItem("Take Screenshot")
-//    val exitItem = MenuItem("Exit")
-//    exitItem.addActionListener {
-//        app.exitApplication()
-//    }
-//
-//    popup.add(aboutItem)
-//    popup.add(displayItem)
-//    popup.add(takeScreenItem)
-//    popup.add(exitItem)
-//    trayIcon.setPopupMenu(popup)
-//
-//    try {
-//        tray.add(trayIcon)
-//    } catch (e: AWTException) {
-//        println("TrayIcon could not be added.")
-//    }
-//
-//}
 
