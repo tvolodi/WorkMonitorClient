@@ -23,6 +23,7 @@ dependencies {
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
     implementation("com.arkivanov.decompose:decompose:2.1.4")
     implementation("com.arkivanov.decompose:extensions-compose-jetbrains:2.1.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")

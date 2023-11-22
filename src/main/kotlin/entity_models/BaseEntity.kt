@@ -1,10 +1,11 @@
 package entity_models
 
-import java.time.LocalDateTime
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
 
 interface BaseEntity {
-    var Id: Long
-    var LastEditedTime: LocalDateTime?
-    var LastEditingUser: AppUser?
-    var LastEditingUserId: Long?
+    var id: Long
+    var lastEditedTime: Instant?
+    var lastEditingUser: AppUser?
+    var lastEditingUserId: Long?
 }

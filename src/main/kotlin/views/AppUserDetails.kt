@@ -10,18 +10,18 @@ import entity_models.AppUser
 @Composable
 fun AppUserDetails( listItem: AppUser, onBack: () -> Unit) {
     Column() {
-        Text(text = "FullName: ${listItem.FullName}")
-        Text(text = "Email: ${listItem.Email}")
-        Text(text = "Phone: ${listItem.Phone}")
-        Text(text = "Address: ${listItem.Address}")
-        Text(text = "Photo: ${listItem.Photo}")
-        Text(text = "About: ${listItem.About}")
-        Text(text = "Birthday: ${listItem.Birthday}")
-        Text(text = "Auth0UserId: ${listItem.Auth0UserId}")
-        Text(text = "Id: ${listItem.Id}")
-        Text(text = "LastEditedTime: ${listItem.LastEditedTime}")
-        Text(text = "LastEditingUser: ${listItem.LastEditingUser}")
-        Text(text = "LastEditingUserId: ${listItem.LastEditingUserId}")
+        Text(text = "FullName: ${listItem.fullName}")
+        Text(text = "Email: ${listItem.email}")
+        Text(text = "Phone: ${listItem.phone}")
+        Text(text = "Address: ${listItem.address}")
+        Text(text = "Photo: ${listItem.photo}")
+        Text(text = "About: ${listItem.about}")
+        Text(text = "Birthday: ${listItem.birthday}")
+        Text(text = "Auth0UserId: ${listItem.auth0UserId}")
+        Text(text = "Id: ${listItem.id}")
+        Text(text = "LastEditedTime: ${listItem.lastEditedTime}")
+        Text(text = "LastEditingUser: ${listItem.lastEditingUser}")
+        Text(text = "LastEditingUserId: ${listItem.lastEditingUserId}")
 
         Spacer(modifier = androidx.compose.ui.Modifier.weight(2f, true))
 

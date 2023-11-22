@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
 import entity_models.AppUser
 import kotlinx.coroutines.launch
+import services.GetRequest
 import services.getAppUserList
 
 @Composable
@@ -23,7 +24,7 @@ fun AppUserList() {
 
     // Get AppUser list from API
     coroutineScope.launch {
-        val appUserList = getAppUserList()
+        val appUserList = getAppUserList(GetRequest(null, null, null, null))
         listItems.clear()
         listItems.addAll(appUserList)
     }
@@ -31,7 +32,7 @@ fun AppUserList() {
     LazyColumn {
         items(listItems.size) { index ->
             Text(
-                text = listItems[index].FullName,
+                text = listItems[index].fullName,
                 modifier = androidx.compose.ui.Modifier
                     .clickable {  }
                     .fillMaxWidth()

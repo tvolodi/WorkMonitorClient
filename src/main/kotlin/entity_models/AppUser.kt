@@ -1,20 +1,27 @@
 package entity_models
 
-import java.time.LocalDateTime
+import kotlinx.datetime.Instant
+import kotlinx.serialization.Contextual
+import kotlinx.datetime.LocalDateTime
 
+@kotlinx.serialization.Serializable
 data class AppUser
     (
-    var FullName: String,
-    var Email: String?,
-    var Phone: String?,
-    var Address: String?,
-    var Photo: String?,
-    var About: String?,
-    var Birthday: LocalDateTime?,
-    var Auth0UserId: String?,
-    override var Id: Long,
-    override var LastEditedTime: LocalDateTime?,
-    override var LastEditingUser: AppUser?,
-    override var LastEditingUserId: Long?,
+    var fullName: String,
+    var email: String?,
+    var phone: String?,
+    var address: String?,
+    var photo: String?,
+    var about: String?,
+
+    @Contextual
+    var birthday: Instant?,
+    var auth0UserId: String?,
+    override var id: Long,
+
+    @Contextual
+    override var lastEditedTime: Instant?,
+    override var lastEditingUser: AppUser?,
+    override var lastEditingUserId: Long?,
 
     ): BaseEntity
