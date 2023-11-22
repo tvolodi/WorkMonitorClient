@@ -21,7 +21,7 @@ class AppUserResource(){
 
 }
 
-val httpClient = HttpClient(CIO){
+private val httpClient = HttpClient(CIO){
     install(Resources)
     defaultRequest {
         host = GlobalConfig.appConfig["app_server_host"].toString()
