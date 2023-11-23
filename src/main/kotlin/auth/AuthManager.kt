@@ -225,6 +225,8 @@ object AuthManager {
         val userHome = System.getProperty("user.home")
         val tokenFile = File(userHome, "wm_tokens.json")
 
+        GlobalConfig.areTokenExist = true
+
         tokenFile.writeText(jsonString)
     }
 

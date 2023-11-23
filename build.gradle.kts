@@ -21,6 +21,11 @@ dependencies {
     // compose.desktop.currentOs should be used in launcher-sourceSet
     // (in a separate module for demo project and in testMain).
     // With compose.desktop.common you will also lose @Preview functionality
+//    runtimeOnly("androidx.compose.runtime:runtime:1.5.4")
+//    runtimeOnly("androidx.compose.runtime:runtime-livedata:1.5.4")
+//    runtimeOnly("androidx.compose.runtime:runtime-rxjava2:1.5.4")
+    implementation("org.jetbrains.compose.runtime:runtime-desktop:1.5.3")
+
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
