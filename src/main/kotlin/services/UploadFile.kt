@@ -70,7 +70,7 @@ private suspend fun sendFile(fileName: String): Int {
         }
     }
 
-    val response = client.post("http://localhost:5218/api/UploadFile") {
+    val response = client.post("https://localhost:5218/api/UploadFile") {
         headers {
             append(HttpHeaders.ContentType, "multipart/form-data")
             append(HttpHeaders.Authorization, "Bearer ${GlobalConfig.tokens["accessToken"]}")

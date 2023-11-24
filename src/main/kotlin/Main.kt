@@ -34,11 +34,11 @@ import java.awt.SystemColor
 
 var mainWindow: FrameWindowScope? = null
 
-val domain = "dev-e3r1z7qh4iztrv5x.us.auth0.com"
-val clientId = "LKi23IJ0wTFZ3aAV0dwQUyRvFKdsA4zW"
-val redirectUri = "http://localhost:5789/callback"
-val scope = "openid offline_access"
-val audience = "https://www.vt-ptm.org/wm-api"
+//val domain = "dev-e3r1z7qh4iztrv5x.us.auth0.com"
+//val clientId = "LKi23IJ0wTFZ3aAV0dwQUyRvFKdsA4zW"
+//val redirectUri = "http://localhost:5789/callback"
+//val scope = "openid offline_access"
+//val audience = "https://www.vt-ptm.org/wm-api"
 
 @Composable
 @Preview
