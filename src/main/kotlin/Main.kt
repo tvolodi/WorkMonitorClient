@@ -1,46 +1,80 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.sharp.AccountCircle
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.sharp.Done
 import androidx.compose.material.icons.sharp.Home
 import androidx.compose.material.icons.sharp.Info
-import androidx.compose.material.icons.sharp.List
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.window.*
-import java.awt.*
-import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.*
+import auth.AuthManager
+import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.decompose.extensions.compose.jetbrains.lifecycle.LifecycleController
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jetbrains.skia.paragraph.Alignment
+import utils.GlobalConfig
+import utils.runScheduledScreenshot
+import utils.takeScreenshot
+import views.*
+import java.awt.SystemColor
+
 
 var mainWindow: FrameWindowScope? = null
+
+val domain = "dev-e3r1z7qh4iztrv5x.us.auth0.com"
+val clientId = "LKi23IJ0wTFZ3aAV0dwQUyRvFKdsA4zW"
+val redirectUri = "http://localhost:5789/callback"
+val scope = "openid offline_access"
+val audience = "https://www.vt-ptm.org/wm-api"
 
 @Composable
 @Preview
 fun App() {
 
+    val screenViews = ScreenViews.entries
+    val navigationController by rememberNavigationController(ScreenViews.HOME_SCREEN.name)
+    val currentScreen by remember {
+        navigationController.currentScreen
+    }
+    var selectedSreenView = remember { mutableStateOf(ScreenViews.HOME_SCREEN) }
+
+    val navigation = remember {StackNavigation<AppChilds>()}
+
     var text by remember { mutableStateOf("Hello, World!") }
     var currDrawerState = rememberDrawerState(DrawerValue.Closed)
     var isMenuExpanded by remember { mutableStateOf(false) }
     var isAccountMenuExpanded by remember { mutableStateOf(false) }
+    val authManager = remember { AuthManager }
 
     val scaffoldState = rememberScaffoldState()
     val appScope = rememberCoroutineScope()
+
+    var selectedView  = remember { mutableStateOf(MainViews.USER_VIEW) }
+
+    var isAccessTokenExists = remember { mutableStateOf(GlobalConfig.areTokenExist)}
+
+    var hostText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_host"] ?: "")}
+    var portText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_port"] ?: "")}
+    var protocolText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_protocol"] ?: "")}
+
+    var authDomainText = remember{mutableStateOf(GlobalConfig.authConfig["auth_domain"] ?: "")}
+    var authClientIdText = remember{mutableStateOf(GlobalConfig.authConfig["auth_client_id"] ?: "")}
+    var authRedirectUriText = remember{mutableStateOf(GlobalConfig.authConfig["auth_redirect_uri"] ?: "")}
+    var authAudienceText = remember{mutableStateOf(GlobalConfig.authConfig["auth_audience"] ?: "")}
+
 
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
@@ -48,7 +82,6 @@ fun App() {
     ) {
         Scaffold (
             scaffoldState = scaffoldState,
-
             topBar = {
                 TopAppBar(
                     title = { Text("Work Monitoring") },
@@ -59,6 +92,52 @@ fun App() {
 //                        .height(40.dp)
                         .shadow(elevation = 3.dp, shape = MaterialTheme.shapes.small),
                     actions = {
+
+                        // AppUsers View
+                        IconButton(
+                            enabled = isAccessTokenExists.value,
+                            onClick = {
+                                appScope.launch {
+                                    // selectedView.value = MainViews.USER_VIEW
+                                }
+    //                            selectedSreenView.value = ScreenViews.APPUSERS_SCREEN
+                            navigationController.navigate(ScreenViews.APPUSERS_SCREEN.name)
+                            }
+                        ) {
+                            Icon(Icons.Filled.Person, contentDescription = null)
+                        }
+
+                        // Project View
+                        IconButton(
+                            enabled = isAccessTokenExists.value,
+                            onClick = {
+                                selectedView.value = MainViews.PROJECT_VIEW
+                                navigationController.navigate(ScreenViews.PROJECTS_SCREEN.name)
+                            }
+                        ) {
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = null)
+                        }
+
+                        // Tasks View
+                        IconButton(
+//                            enabled = isAccessTokenExists.value,
+                            onClick = {
+//                                selectedView.value = MainViews.PROJECT_VIEW
+//                                navigationController.navigate(ScreenViews.PROJECTS_SCREEN.name)
+                                GlobalConfig.areTokenExist = true
+                            }
+                        ) {
+                            Icon(Icons.Filled.List, contentDescription = null)
+                        }
+
+                        IconButton(onClick = {
+                            appScope.launch {
+                                takeScreenshot()
+                            }
+                        }) {
+                            Icon (painterResource("ScreenshotIcon.svg"), contentDescription = null, modifier = Modifier.padding(8.dp))
+                        }
+
                         IconButton(onClick = { isAccountMenuExpanded = true }) {
                             Icon(Icons.Filled.AccountCircle, contentDescription = null)
                         }
@@ -67,7 +146,11 @@ fun App() {
                             expanded = isAccountMenuExpanded,
                             onDismissRequest = { isAccountMenuExpanded = false },
                         ) {
-                            DropdownMenuItem(onClick = { /* Handle refresh! */ }) {
+                            DropdownMenuItem(onClick = {
+                                appScope.launch {
+                                    authManager.authenticateUser()
+                                }
+                            }) {
                                 Text("Login")
                             }
                             DropdownMenuItem(onClick = { /* Handle settings! */ }) {
@@ -97,133 +180,253 @@ fun App() {
                     }
                 }
             },
-            drawerGesturesEnabled = true,
-            drawerContent = {
-                Column {
-                    Text("Item 1")
-                    Text("Item 2")
-                    Text("Item 3")
-                }
-            }
+//            drawerGesturesEnabled = true,
+//            drawerContent = {
+//                Column {
+//                    Text("Item 1")
+//                    Text("Item 2")
+//                    Text("Item 3")
+//                }
+//            }
 
 
         ) { innerPadding ->
-            Column(
 
-            ) {
-                Text(text = "Primary: $text", color = MaterialTheme.colorScheme.primary)
-                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inversePrimary)
-                Text(text = "OnPrimary: $text", color = MaterialTheme.colorScheme.onPrimary)
-                Text(text = "Secondary: $text", color = MaterialTheme.colorScheme.secondary)
-//                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inverseSecondary)
-                Text(text = "Background: $text", color = MaterialTheme.colorScheme.background)
-                Text(text = "Outline: $text", color = MaterialTheme.colorScheme.outline)
-                Text(text = "Outline: $text", color = MaterialTheme.colorScheme.onPrimary)
-                Text(text = "Error: $text", color = MaterialTheme.colorScheme.error)
-                Text(text = "Surface: $text", color = MaterialTheme.colorScheme.surface)
-                Text(text = "Inverse: $text", color = MaterialTheme.colorScheme.inverseSurface)
+            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
 
-                Button(onClick = {
-                    text = "Hello, Desktop!"
-                }) {
-                    Text("Click me!")
+                // Application server host
+//                Text(text = "Host name")
+                TextField(
+                    value = hostText.value,
+                    onValueChange = { hostText.value = it },
+                    label = { Text("Host Name") },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                )
+                TextField(
+                    value = portText.value,
+                    onValueChange = { portText.value = it },
+                    label = { Text("Port Number") },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                )
+                TextField(
+                    value = protocolText .value,
+                    onValueChange = { protocolText.value = it },
+                    label = { Text("Protocol (HTTP/HTTPS)") },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                )
+
+                Divider(modifier = Modifier.padding(8.dp), thickness = 2.dp)
+                TextField(
+                    value = authDomainText.value,
+                    onValueChange = { authDomainText.value = it },
+                    label = { Text("Authentication host") },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                )
+                TextField(
+                    value = authClientIdText.value,
+                    onValueChange = { authClientIdText.value = it },
+                    label = { Text("Client Id") },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                )
+                TextField(
+                    value = authRedirectUriText.value,
+                    onValueChange = { authRedirectUriText.value = it },
+                    label = { Text("Redirection URL") },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                )
+                TextField(
+                    value = authAudienceText.value,
+                    onValueChange = { authAudienceText.value = it },
+                    label = { Text("Auth Audience") },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                )
+
+                Divider(modifier = Modifier.padding(8.dp), thickness = 2.dp)
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {appScope.launch {} },
+                        modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.onPrimary)
+                            .padding(4.dp),
+//                    .shadow(elevation = 3.dp, shape = MaterialTheme.shapes.small,
+                    ) {
+                        Icon(Icons.Sharp.Done, contentDescription = null)
+                    }
                 }
+
             }
+
+
+//            screenViews.forEach{
+//                if (it == selectedSreenView.value) {
+//                    navigationController.navigate(it.name)
+//                }
+//            }
+
+//             customNavigationHost(navigationController = navigationController)
+
+//            when (selectedView.value) {
+//                MainViews.USER_VIEW -> {
+//                    AppUserList()
+//                }
+//
+//                MainViews.PROJECT_VIEW -> {
+//                    ProjectList()
+//                }
+//
+//                else -> {
+//                    Text("Hello, World!")}
+//            }
+
+//            ChildStack(
+//                source = navigation,
+//                initialStack = { listOf(AppUserView) },
+//                handleBackButton = true,
+//                animation = stackAnimation(fade() + scale()),
+//            ) { child ->
+//                when (child) {
+//                    is AppUserView -> {
+//                        AppUserList()
+//                    }
+//
+//                    is ProjectView -> {
+//                        ProjectList()
+//                    }
+//                }
+//            }
         }
     }
-
-//    MaterialTheme {
-//        Button(onClick = {
-//
-//            var width = 0
-//            var height = 0
-//            val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-//            val gDevices = ge.screenDevices
-//            for(dev in gDevices){
-//                val displayMode = dev.displayMode
-//                width += displayMode.width
-//                height = displayMode.height
-//            }
-//
-//            val screenRectangle = Rectangle(0, 0, width, height)
-//            val captureImage = Robot().createScreenCapture(screenRectangle)
-//            ImageIO.write(captureImage, "png", File("ScreenShot.png"))
-//
-//            text = "Hello, Desktop!"
-//        }) {
-//            Text(text)
-//        }
-//    }
 }
 
-fun main() = application {
-    val isOpen = remember { mutableStateOf(true) }
-    var windowScope: FrameWindowScope
+fun main(){
+
+    val lifecycle = LifecycleRegistry()
+
+    val rootComponentContext = DefaultComponentContext(lifecycle = lifecycle)
+
+    application {
+
+        val windowState = rememberWindowState(WindowPlacement.Maximized)
+        LifecycleController(lifecycle, windowState)
+
+        // Restore configuration from file
+        GlobalConfig.authConfig = GlobalConfig.readConfig("wm_auth_config.json")
+        GlobalConfig.appConfig = GlobalConfig.readConfig("wm_app_config.json")
+        GlobalConfig.tokens = GlobalConfig.readConfig("wm_tokens.json")
+        if(GlobalConfig.tokens.isEmpty()){
+            GlobalScope.launch {
+                AuthManager.authenticateUser()
+            }
+        }
+
+        val isOpen = remember { mutableStateOf(true) }
+        var windowScope: FrameWindowScope
 
 //    val image: Image = BufferedImage()// Toolkit.getDefaultToolkit().getImage(url)
 
-    if(isOpen.value) {
-        Window(title = "Work Monitoring",
-            onCloseRequest = {
-            isOpen.value = false
-        }) { //  ::exitApplication
-            mainWindow = this
-            App()
-        }
-    }
+        if(isOpen.value) {
+            Window(
+                title = "Work Monitoring",
+                state = windowState,
+                onCloseRequest = {
+                    isOpen.value = false
+                }) { //  ::exitApplication
+                mainWindow = this
 
-    if(isTraySupported) {
-        Tray(
-            icon = painterResource("Flat-Icons.com-Flat-Clock.16.png"),
-            menu = {
-                Item("About", onClick = {
-
-                })
-                Item("Display", onClick = {
-                    isOpen.value = true
-                })
-                Item("Take Screenshot", onClick = {
-
-                })
-                Item("Exit", onClick = {
-                    exitApplication()
-                })
+                CompositionLocalProvider(LocalComponentContext provides rootComponentContext) {
+                    ProvideComponentContext(rootComponentContext) {
+                        App()
+                    }
+                }
+//                App()
             }
-        )
+        }
+
+        if(isTraySupported) {
+            Tray(
+                icon = painterResource("Flat-Icons.com-Flat-Clock.16.png"),
+                menu = {
+                    Item("About", onClick = {
+
+                    })
+                    Item("Display", onClick = {
+                        isOpen.value = true
+                    })
+                    Item("Take Screenshot", onClick = {
+
+                    })
+                    Item("Exit", onClick = {
+                        exitApplication()
+                    })
+                }
+            )
+        }
+
+        // Run a screenshot task every periodLength minutes
+        runScheduledScreenshot(15)
     }
 }
 
-//fun createTray(app: ApplicationScope, isMainWindowOpen: MutableState<Boolean>): Unit {
-//
-//    var tray = SystemTray.getSystemTray()
-//    val popup: PopupMenu =  PopupMenu()
-//    // val url = System::class.java.getResource("/images/new.png")
-//    val url = "Flat-Icons.com-Flat-Clock.16.png"
-//    val image: Image = Toolkit.getDefaultToolkit().getImage(url)
-//    val trayIcon = TrayIcon(image)
-//    val aboutItem = MenuItem("About")
-//
-//    val displayItem = MenuItem("Display")
-//    displayItem.addActionListener {
-//        isMainWindowOpen.value = true
-//    }
-//
-//    val takeScreenItem = MenuItem("Take Screenshot")
-//    val exitItem = MenuItem("Exit")
-//    exitItem.addActionListener {
-//        app.exitApplication()
-//    }
-//
-//    popup.add(aboutItem)
-//    popup.add(displayItem)
-//    popup.add(takeScreenItem)
-//    popup.add(exitItem)
-//    trayIcon.setPopupMenu(popup)
-//
-//    try {
-//        tray.add(trayIcon)
-//    } catch (e: AWTException) {
-//        println("TrayIcon could not be added.")
-//    }
-//
-//}
+enum class ScreenViews(
+    val label: String,
+    val icon: ImageVector
+){
+    HOME_SCREEN(
+        label = "Home",
+        icon = Icons.Filled.Home
+    ),
+    APPUSERS_SCREEN(
+        label = "App Users",
+        icon = Icons.Filled.Person
+    ),
+    PROJECTS_SCREEN(
+        label = "Projects",
+        icon = Icons.Filled.ShoppingCart
+    ),
+    NOTIFICATIONS_SCREEN(
+        label = "Notifications",
+        icon = Icons.Filled.Notifications
+    ),
+    SETTINGS_SCREEN(
+        label = "Settings",
+        icon = Icons.Filled.Settings
+    ),
+    PROFILE_SCREEN(
+        label = "User Profile",
+        icon = Icons.Filled.AccountCircle
+    )
+}
+
+@Composable
+fun customNavigationHost(
+    navigationController: NavigationController
+) {
+    NavigationHost(navigationController) {
+        composable(ScreenViews.HOME_SCREEN.name) {
+            Text("Home Screen")
+        }
+
+        composable(ScreenViews.APPUSERS_SCREEN.name) {
+            AppUserList()
+        }
+
+        composable(ScreenViews.PROJECTS_SCREEN.name) {
+            ProjectList()
+        }
+
+        composable(ScreenViews.NOTIFICATIONS_SCREEN.name) {
+            Text("Notifications Screen")
+        }
+
+        composable(ScreenViews.SETTINGS_SCREEN.name) {
+            Text("Settings Screen")
+        }
+
+        composable(ScreenViews.PROFILE_SCREEN.name) {
+            Text("Profile Screen")
+        }
+    }.build()
+}
+
