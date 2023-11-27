@@ -85,3 +85,8 @@ private fun saveConfig(configMap: MutableMap<String, String>, fileName: String) 
     file.writeText(jsonString)
 }
 
+fun saveGlobalConfig() {
+    saveConfig(GlobalConfig.authConfig, "wm_auth_config.json")
+    saveConfig(GlobalConfig.appConfig, "wm_app_config.json")
+}
+

@@ -9,7 +9,7 @@ import androidx.compose.material.icons.sharp.Home
 import androidx.compose.material.icons.sharp.Info
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -22,14 +22,15 @@ import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.extensions.compose.jetbrains.lifecycle.LifecycleController
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.jetbrains.skia.paragraph.Alignment
+import services.saveConfigFiles
 import utils.GlobalConfig
 import utils.runScheduledScreenshot
+import utils.saveGlobalConfig
 import utils.takeScreenshot
 import views.*
-import java.awt.SystemColor
 
 
 var mainWindow: FrameWindowScope? = null
@@ -45,6 +46,9 @@ var mainWindow: FrameWindowScope? = null
 fun App() {
 
     val screenViews = ScreenViews.entries
+
+
+
     val navigationController by rememberNavigationController(ScreenViews.HOME_SCREEN.name)
     val currentScreen by remember {
         navigationController.currentScreen
@@ -65,6 +69,21 @@ fun App() {
     var selectedView  = remember { mutableStateOf(MainViews.USER_VIEW) }
 
     var isAccessTokenExists = remember { mutableStateOf(GlobalConfig.areTokenExist)}
+
+    var globalConfigAuth = remember { mutableStateMapOf<String, String>() }
+    GlobalConfig.authConfig.forEach{
+        globalConfigAuth[it.key] = it.value
+    }
+
+    var globalConfigApp = remember { mutableStateMapOf<String, String>() }
+    GlobalConfig.appConfig.forEach{
+        globalConfigApp[it.key] = it.value
+    }
+
+    var globalConfigTokens = remember { mutableStateMapOf<String, String>() }
+    GlobalConfig.tokens.forEach{
+        globalConfigTokens[it.key] = it.value
+    }
 
     var hostText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_host"] ?: "")}
     var portText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_port"] ?: "")}
@@ -95,16 +114,18 @@ fun App() {
 
                         // AppUsers View
                         IconButton(
-                            enabled = isAccessTokenExists.value,
+//                            enabled = isAccessTokenExists.value,
                             onClick = {
-                                appScope.launch {
-                                    // selectedView.value = MainViews.USER_VIEW
-                                }
-    //                            selectedSreenView.value = ScreenViews.APPUSERS_SCREEN
-                            navigationController.navigate(ScreenViews.APPUSERS_SCREEN.name)
+                                selectedSreenView.value = ScreenViews.SETTINGS_SCREEN
+
+//                                appScope.launch {
+//                                    // selectedView.value = MainViews.USER_VIEW
+//                                }
+//    //                            selectedSreenView.value = ScreenViews.APPUSERS_SCREEN
+//                            navigationController.navigate(ScreenViews.APPUSERS_SCREEN.name)
                             }
                         ) {
-                            Icon(Icons.Filled.Person, contentDescription = null)
+                            Icon(Icons.Filled.Settings, contentDescription = null)
                         }
 
                         // Project View
@@ -122,9 +143,10 @@ fun App() {
                         IconButton(
 //                            enabled = isAccessTokenExists.value,
                             onClick = {
+                                selectedSreenView.value = ScreenViews.HOME_SCREEN
 //                                selectedView.value = MainViews.PROJECT_VIEW
 //                                navigationController.navigate(ScreenViews.PROJECTS_SCREEN.name)
-                                GlobalConfig.areTokenExist = true
+//                                GlobalConfig.areTokenExist = true
                             }
                         ) {
                             Icon(Icons.Filled.List, contentDescription = null)
@@ -192,71 +214,29 @@ fun App() {
 
         ) { innerPadding ->
 
-            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-
-                // Application server host
-//                Text(text = "Host name")
-                TextField(
-                    value = hostText.value,
-                    onValueChange = { hostText.value = it },
-                    label = { Text("Host Name") },
-                    modifier = Modifier.padding(4.dp).fillMaxWidth()
-                )
-                TextField(
-                    value = portText.value,
-                    onValueChange = { portText.value = it },
-                    label = { Text("Port Number") },
-                    modifier = Modifier.padding(4.dp).fillMaxWidth()
-                )
-                TextField(
-                    value = protocolText .value,
-                    onValueChange = { protocolText.value = it },
-                    label = { Text("Protocol (HTTP/HTTPS)") },
-                    modifier = Modifier.padding(4.dp).fillMaxWidth()
-                )
-
-                Divider(modifier = Modifier.padding(8.dp), thickness = 2.dp)
-                TextField(
-                    value = authDomainText.value,
-                    onValueChange = { authDomainText.value = it },
-                    label = { Text("Authentication host") },
-                    modifier = Modifier.padding(4.dp).fillMaxWidth()
-                )
-                TextField(
-                    value = authClientIdText.value,
-                    onValueChange = { authClientIdText.value = it },
-                    label = { Text("Client Id") },
-                    modifier = Modifier.padding(4.dp).fillMaxWidth()
-                )
-                TextField(
-                    value = authRedirectUriText.value,
-                    onValueChange = { authRedirectUriText.value = it },
-                    label = { Text("Redirection URL") },
-                    modifier = Modifier.padding(4.dp).fillMaxWidth()
-                )
-                TextField(
-                    value = authAudienceText.value,
-                    onValueChange = { authAudienceText.value = it },
-                    label = { Text("Auth Audience") },
-                    modifier = Modifier.padding(4.dp).fillMaxWidth()
-                )
-
-                Divider(modifier = Modifier.padding(8.dp), thickness = 2.dp)
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    IconButton(
-                        onClick = {appScope.launch {} },
-                        modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.onPrimary)
-                            .padding(4.dp),
-//                    .shadow(elevation = 3.dp, shape = MaterialTheme.shapes.small,
-                    ) {
-                        Icon(Icons.Sharp.Done, contentDescription = null)
-                    }
+            when(selectedSreenView.value){
+                ScreenViews.HOME_SCREEN -> {
+                    ProjectTaskView()
                 }
 
+                ScreenViews.SETTINGS_SCREEN -> {
+                    ConfigView(
+                        hostText,
+                        portText,
+                        globalConfigApp,
+                        authDomainText,
+                        authClientIdText,
+                        authRedirectUriText,
+                        authAudienceText,
+                        appScope,
+                        globalConfigAuth
+                    )
+                }
+
+                else -> {}
             }
+
+
 
 
 //            screenViews.forEach{
@@ -297,6 +277,96 @@ fun App() {
 //                }
 //            }
         }
+    }
+}
+
+@Composable
+private fun ConfigView(
+    hostText: MutableState<String>,
+    portText: MutableState<String>,
+    globalConfigApp: SnapshotStateMap<String, String>,
+    authDomainText: MutableState<String>,
+    authClientIdText: MutableState<String>,
+    authRedirectUriText: MutableState<String>,
+    authAudienceText: MutableState<String>,
+    appScope: CoroutineScope,
+    globalConfigAuth: SnapshotStateMap<String, String>
+) {
+    Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+
+        // Application server host
+//                Text(text = "Host name")
+        TextField(
+            value = hostText.value,
+            onValueChange = { hostText.value = it },
+            label = { Text("Host Name") },
+            modifier = Modifier.padding(4.dp).fillMaxWidth()
+        )
+        TextField(
+            value = portText.value,
+            onValueChange = { portText.value = it },
+            label = { Text("Port Number") },
+            modifier = Modifier.padding(4.dp).fillMaxWidth()
+        )
+        TextField(
+            value = globalConfigApp["app_server_protocol"] ?: "",
+            onValueChange = { globalConfigApp["app_server_protocol"] = it },
+            label = { Text("Protocol (HTTP/HTTPS)") },
+            modifier = Modifier.padding(4.dp).fillMaxWidth()
+        )
+
+        Divider(modifier = Modifier.padding(8.dp), thickness = 2.dp)
+        TextField(
+            value = authDomainText.value,
+            onValueChange = { authDomainText.value = it },
+            label = { Text("Authentication host") },
+            modifier = Modifier.padding(4.dp).fillMaxWidth()
+        )
+        TextField(
+            value = authClientIdText.value,
+            onValueChange = { authClientIdText.value = it },
+            label = { Text("Client Id") },
+            modifier = Modifier.padding(4.dp).fillMaxWidth()
+        )
+        TextField(
+            value = authRedirectUriText.value,
+            onValueChange = { authRedirectUriText.value = it },
+            label = { Text("Redirection URL") },
+            modifier = Modifier.padding(4.dp).fillMaxWidth()
+        )
+        TextField(
+            value = authAudienceText.value,
+            onValueChange = { authAudienceText.value = it },
+            label = { Text("Auth Audience") },
+            modifier = Modifier.padding(4.dp).fillMaxWidth()
+        )
+
+        Divider(modifier = Modifier.padding(8.dp), thickness = 2.dp)
+        Row(
+            horizontalArrangement = Arrangement.End,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(
+                onClick = {
+                    appScope.launch {
+                        globalConfigApp.forEach {
+                            GlobalConfig.appConfig[it.key] = it.value
+                        }
+                        globalConfigAuth.forEach {
+                            GlobalConfig.authConfig[it.key] = it.value
+                        }
+                        saveGlobalConfig()
+
+                    }
+                },
+                modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.onPrimary)
+                    .padding(4.dp),
+//                    .shadow(elevation = 3.dp, shape = MaterialTheme.shapes.small,
+            ) {
+                Icon(Icons.Sharp.Done, contentDescription = null)
+            }
+        }
+
     }
 }
 
@@ -390,7 +460,7 @@ enum class ScreenViews(
         icon = Icons.Filled.Notifications
     ),
     SETTINGS_SCREEN(
-        label = "Settings",
+        label = "Config",
         icon = Icons.Filled.Settings
     ),
     PROFILE_SCREEN(
