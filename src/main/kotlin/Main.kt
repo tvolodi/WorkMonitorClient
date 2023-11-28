@@ -25,11 +25,10 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import services.saveConfigFiles
-import utils.GlobalConfig
-import utils.runScheduledScreenshot
-import utils.saveGlobalConfig
-import utils.takeScreenshot
+import services.checkAndCreateDatabase
+import services.readConfigValue
+import services.saveConfigValue
+import utils.*
 import views.*
 
 
@@ -68,32 +67,31 @@ fun App() {
 
     var selectedView  = remember { mutableStateOf(MainViews.USER_VIEW) }
 
-    var isAccessTokenExists = remember { mutableStateOf(GlobalConfig.areTokenExist)}
+    var isAccessTokenExists = remember { mutableStateOf(true) }  // { mutableStateOf(GlobalConfig.areTokenExist)}
 
-    var globalConfigAuth = remember { mutableStateMapOf<String, String>() }
-    GlobalConfig.authConfig.forEach{
-        globalConfigAuth[it.key] = it.value
-    }
+//    var globalConfigAuth = remember { mutableStateMapOf<String, String>() }
+//    GlobalConfig.authConfig.forEach{
+//        globalConfigAuth[it.key] = it.value
+//    }
+//
+//    var globalConfigApp = remember { mutableStateMapOf<String, String>() }
+//    GlobalConfig.appConfig.forEach{
+//        globalConfigApp[it.key] = it.value
+//    }
+//
+//    var globalConfigTokens = remember { mutableStateMapOf<String, String>() }
+//    GlobalConfig.tokens.forEach{
+//        globalConfigTokens[it.key] = it.value
+//    }
 
-    var globalConfigApp = remember { mutableStateMapOf<String, String>() }
-    GlobalConfig.appConfig.forEach{
-        globalConfigApp[it.key] = it.value
-    }
+    var hostText = remember{mutableStateOf( readConfigValue("app_server_host"))}
+    var portText = remember{mutableStateOf(readConfigValue("app_server_port"))}
+    var protocolText = remember{mutableStateOf(readConfigValue("app_server_protocol"))}
 
-    var globalConfigTokens = remember { mutableStateMapOf<String, String>() }
-    GlobalConfig.tokens.forEach{
-        globalConfigTokens[it.key] = it.value
-    }
-
-    var hostText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_host"] ?: "")}
-    var portText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_port"] ?: "")}
-    var protocolText = remember{mutableStateOf(GlobalConfig.appConfig["app_server_protocol"] ?: "")}
-
-    var authDomainText = remember{mutableStateOf(GlobalConfig.authConfig["auth_domain"] ?: "")}
-    var authClientIdText = remember{mutableStateOf(GlobalConfig.authConfig["auth_client_id"] ?: "")}
-    var authRedirectUriText = remember{mutableStateOf(GlobalConfig.authConfig["auth_redirect_uri"] ?: "")}
-    var authAudienceText = remember{mutableStateOf(GlobalConfig.authConfig["auth_audience"] ?: "")}
-
+    var authDomainText = remember{mutableStateOf(readConfigValue("auth_domain"))}
+    var authClientIdText = remember{mutableStateOf(readConfigValue("auth_client_id"))}
+    var authRedirectUriText = remember{mutableStateOf(readConfigValue("auth_redirect_uri"))}
+    var authAudienceText = remember{mutableStateOf(readConfigValue("auth_audience"))}
 
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
@@ -220,82 +218,30 @@ fun App() {
                 }
 
                 ScreenViews.SETTINGS_SCREEN -> {
-                    ConfigView(
-                        hostText,
-                        portText,
-                        globalConfigApp,
-                        authDomainText,
-                        authClientIdText,
-                        authRedirectUriText,
-                        authAudienceText,
-                        appScope,
-                        globalConfigAuth
-                    )
+                    ConfigView()
                 }
 
                 else -> {}
             }
-
-
-
-
-//            screenViews.forEach{
-//                if (it == selectedSreenView.value) {
-//                    navigationController.navigate(it.name)
-//                }
-//            }
-
-//             customNavigationHost(navigationController = navigationController)
-
-//            when (selectedView.value) {
-//                MainViews.USER_VIEW -> {
-//                    AppUserList()
-//                }
-//
-//                MainViews.PROJECT_VIEW -> {
-//                    ProjectList()
-//                }
-//
-//                else -> {
-//                    Text("Hello, World!")}
-//            }
-
-//            ChildStack(
-//                source = navigation,
-//                initialStack = { listOf(AppUserView) },
-//                handleBackButton = true,
-//                animation = stackAnimation(fade() + scale()),
-//            ) { child ->
-//                when (child) {
-//                    is AppUserView -> {
-//                        AppUserList()
-//                    }
-//
-//                    is ProjectView -> {
-//                        ProjectList()
-//                    }
-//                }
-//            }
         }
     }
 }
 
 @Composable
 private fun ConfigView(
-    hostText: MutableState<String>,
-    portText: MutableState<String>,
-    globalConfigApp: SnapshotStateMap<String, String>,
-    authDomainText: MutableState<String>,
-    authClientIdText: MutableState<String>,
-    authRedirectUriText: MutableState<String>,
-    authAudienceText: MutableState<String>,
-    appScope: CoroutineScope,
-    globalConfigAuth: SnapshotStateMap<String, String>
 ) {
-    Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+    var hostText = remember{mutableStateOf( readConfigValue("app_server_host"))}
+    var portText = remember{mutableStateOf(readConfigValue("app_server_port"))}
+    var protocolText = remember{mutableStateOf(readConfigValue("app_server_protocol"))}
 
-        // Application server host
-//                Text(text = "Host name")
+    var authDomainText = remember{mutableStateOf(readConfigValue("auth_domain"))}
+    var authClientIdText = remember{mutableStateOf(readConfigValue("auth_client_id"))}
+    var authRedirectUriText = remember{mutableStateOf(readConfigValue("auth_redirect_uri"))}
+    var authAudienceText = remember{mutableStateOf(readConfigValue("auth_audience"))}
+
+    val routineScope = rememberCoroutineScope()
+
+    Column(modifier = Modifier.width(IntrinsicSize.Max)) {
         TextField(
             value = hostText.value,
             onValueChange = { hostText.value = it },
@@ -309,8 +255,10 @@ private fun ConfigView(
             modifier = Modifier.padding(4.dp).fillMaxWidth()
         )
         TextField(
-            value = globalConfigApp["app_server_protocol"] ?: "",
-            onValueChange = { globalConfigApp["app_server_protocol"] = it },
+            value = protocolText.value,
+            onValueChange = {
+                protocolText.value = it
+            },
             label = { Text("Protocol (HTTP/HTTPS)") },
             modifier = Modifier.padding(4.dp).fillMaxWidth()
         )
@@ -348,15 +296,14 @@ private fun ConfigView(
         ) {
             IconButton(
                 onClick = {
-                    appScope.launch {
-                        globalConfigApp.forEach {
-                            GlobalConfig.appConfig[it.key] = it.value
-                        }
-                        globalConfigAuth.forEach {
-                            GlobalConfig.authConfig[it.key] = it.value
-                        }
-                        saveGlobalConfig()
-
+                    routineScope.launch {
+                        saveConfigValue("app_server_protocol", protocolText.value)
+                        saveConfigValue("app_server_host", hostText.value)
+                        saveConfigValue("app_server_port", portText.value)
+                        saveConfigValue("auth_domain", authDomainText.value)
+                        saveConfigValue("auth_client_id", authClientIdText.value)
+                        saveConfigValue("auth_redirect_uri", authRedirectUriText.value)
+                        saveConfigValue("auth_audience", authAudienceText.value)
                     }
                 },
                 modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.onPrimary)
@@ -372,6 +319,8 @@ private fun ConfigView(
 
 fun main(){
 
+    checkAndCreateDatabase()
+
     val lifecycle = LifecycleRegistry()
 
     val rootComponentContext = DefaultComponentContext(lifecycle = lifecycle)
@@ -382,13 +331,9 @@ fun main(){
         LifecycleController(lifecycle, windowState)
 
         // Restore configuration from file
-        GlobalConfig.authConfig = GlobalConfig.readConfig("wm_auth_config.json")
-        GlobalConfig.appConfig = GlobalConfig.readConfig("wm_app_config.json")
-        GlobalConfig.tokens = GlobalConfig.readConfig("wm_tokens.json")
-        if(GlobalConfig.tokens.isEmpty()){
-            GlobalScope.launch {
-                AuthManager.authenticateUser()
-            }
+//        readGlobalConfig()
+        if(readConfigValue("accessToken") == ""){
+            AuthManager.authenticateUser()
         }
 
         val isOpen = remember { mutableStateOf(true) }
@@ -479,7 +424,7 @@ fun customNavigationHost(
         }
 
         composable(ScreenViews.APPUSERS_SCREEN.name) {
-            AppUserList()
+
         }
 
         composable(ScreenViews.PROJECTS_SCREEN.name) {

@@ -46,6 +46,7 @@ dependencies {
     implementation("com.auth0:java-jwt:4.4.0")
 
     implementation("org.xerial:sqlite-jdbc:3.44.0.0")
+    implementation("org.slf4j:slf4j-api:1.7.36")
 
     implementation("com.google.devtools.ksp:symbol-processing-api:1.9.20-1.0.14")
 

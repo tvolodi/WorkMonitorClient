@@ -16,7 +16,6 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import utils.GlobalConfig
 import java.io.File
 import java.net.URLEncoder
 import java.util.UUID
@@ -55,7 +54,7 @@ private suspend fun sendFile(fileName: String): Int {
     val client = HttpClient(CIO){
 
         headers {
-            append(HttpHeaders.Authorization, "Bearer ${GlobalConfig.tokens["accessToken"]}")
+            append(HttpHeaders.Authorization, "Bearer ${readConfigValue("accessToken")}")
         }
         // TODO check if this process refresh token itself
 //        install(Auth){
@@ -73,7 +72,7 @@ private suspend fun sendFile(fileName: String): Int {
     val response = client.post("https://localhost:5218/api/UploadFile") {
         headers {
             append(HttpHeaders.ContentType, "multipart/form-data")
-            append(HttpHeaders.Authorization, "Bearer ${GlobalConfig.tokens["accessToken"]}")
+            append(HttpHeaders.Authorization, "Bearer ${readConfigValue("accessToken")}")
         }
         setBody(MultiPartFormDataContent(
             formData {
