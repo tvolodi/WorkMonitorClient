@@ -76,6 +76,10 @@ private suspend fun sendFile(fileName: String): Int {
         }
         setBody(MultiPartFormDataContent(
             formData {
+                // projectName -> ProjectName in ASP.Net is mapping good so as taskName -> TaskName
+                append("projectCode", readConfigValue("project_name"))
+                append("taskCode", readConfigValue("task_name"))
+
                 // Section name should be the same as parameter in ASP.Net controller => List<IFormFile> files (!)
                 append("files", File(fileName).readBytes(), Headers.build {
                     append(HttpHeaders.ContentType, "image/png")
