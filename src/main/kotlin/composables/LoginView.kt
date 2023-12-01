@@ -1,5 +1,0 @@
-package composables
-
-class LoginView {
-}
-

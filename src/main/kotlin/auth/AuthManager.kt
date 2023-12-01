@@ -68,11 +68,8 @@ object AuthManager {
                 val code = waitForCallback()
 
                 getToken(
-//                    domain = domain,
-//                    clientId = clientId,
                     verifier = verifier,
                     code = code,
-//                    redirectUri = redirectUri,
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -113,11 +110,6 @@ object AuthManager {
         callbackJob.value = null
     }
 
-    private fun extractUserId(token: String): String {
-        val decodedJwt = JWT.decode(token)
-        return decodedJwt.getClaim("sub").asString()
-    }
-
     private suspend fun waitForCallback(): String {
         var server: NettyApplicationEngine? = null
 
@@ -143,11 +135,8 @@ object AuthManager {
 
     @OptIn(InternalAPI::class)
     private suspend fun getToken(
-//        domain: String,
-//        clientId:String,
         verifier: String,
         code: String,
-//        redirectUri: String,
     ) {
         val encodedRedirectUri = URLEncoder.encode(readConfigValue("auth_redirect_uri"), Charsets.UTF_8)
 
@@ -165,7 +154,7 @@ object AuthManager {
         }.body<TokenResponse>()
 
         // Debug
-        println("response: $response")
+//        println("response: $response")
 
         saveTokens(response)
     }
@@ -195,7 +184,7 @@ object AuthManager {
         saveTokens(response)
 
         // Debug
-        println("response.token: ${response.accessToken}")
+//        println("response.token: ${response.accessToken}")
     }
 
     private fun createChallenge(verifier: String): String {
