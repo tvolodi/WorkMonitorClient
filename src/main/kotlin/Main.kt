@@ -44,21 +44,8 @@ var mainWindow: FrameWindowScope? = null
 @Preview
 fun App() {
 
-    val screenViews = ScreenViews.entries
-
-
-
-    val navigationController by rememberNavigationController(ScreenViews.HOME_SCREEN.name)
-    val currentScreen by remember {
-        navigationController.currentScreen
-    }
     var selectedSreenView = remember { mutableStateOf(ScreenViews.HOME_SCREEN) }
 
-    val navigation = remember {StackNavigation<AppChilds>()}
-
-    var text by remember { mutableStateOf("Hello, World!") }
-    var currDrawerState = rememberDrawerState(DrawerValue.Closed)
-    var isMenuExpanded by remember { mutableStateOf(false) }
     var isAccountMenuExpanded by remember { mutableStateOf(false) }
     val authManager = remember { AuthManager }
 
@@ -68,30 +55,6 @@ fun App() {
     var selectedView  = remember { mutableStateOf(MainViews.USER_VIEW) }
 
     var isAccessTokenExists = remember { mutableStateOf(true) }  // { mutableStateOf(GlobalConfig.areTokenExist)}
-
-//    var globalConfigAuth = remember { mutableStateMapOf<String, String>() }
-//    GlobalConfig.authConfig.forEach{
-//        globalConfigAuth[it.key] = it.value
-//    }
-//
-//    var globalConfigApp = remember { mutableStateMapOf<String, String>() }
-//    GlobalConfig.appConfig.forEach{
-//        globalConfigApp[it.key] = it.value
-//    }
-//
-//    var globalConfigTokens = remember { mutableStateMapOf<String, String>() }
-//    GlobalConfig.tokens.forEach{
-//        globalConfigTokens[it.key] = it.value
-//    }
-
-    var hostText = remember{mutableStateOf( readConfigValue("app_server_host"))}
-    var portText = remember{mutableStateOf(readConfigValue("app_server_port"))}
-    var protocolText = remember{mutableStateOf(readConfigValue("app_server_protocol"))}
-
-    var authDomainText = remember{mutableStateOf(readConfigValue("auth_domain"))}
-    var authClientIdText = remember{mutableStateOf(readConfigValue("auth_client_id"))}
-    var authRedirectUriText = remember{mutableStateOf(readConfigValue("auth_redirect_uri"))}
-    var authAudienceText = remember{mutableStateOf(readConfigValue("auth_audience"))}
 
     MaterialTheme (colors = lightColors(),
         typography = Typography(defaultFontFamily = FontFamily.SansSerif),
@@ -115,12 +78,6 @@ fun App() {
 //                            enabled = isAccessTokenExists.value,
                             onClick = {
                                 selectedSreenView.value = ScreenViews.SETTINGS_SCREEN
-
-//                                appScope.launch {
-//                                    // selectedView.value = MainViews.USER_VIEW
-//                                }
-//    //                            selectedSreenView.value = ScreenViews.APPUSERS_SCREEN
-//                            navigationController.navigate(ScreenViews.APPUSERS_SCREEN.name)
                             }
                         ) {
                             Icon(Icons.Filled.Settings, contentDescription = null)
@@ -131,7 +88,6 @@ fun App() {
                             enabled = isAccessTokenExists.value,
                             onClick = {
                                 selectedView.value = MainViews.PROJECT_VIEW
-                                navigationController.navigate(ScreenViews.PROJECTS_SCREEN.name)
                             }
                         ) {
                             Icon(Icons.Filled.ShoppingCart, contentDescription = null)
@@ -142,9 +98,6 @@ fun App() {
 //                            enabled = isAccessTokenExists.value,
                             onClick = {
                                 selectedSreenView.value = ScreenViews.HOME_SCREEN
-//                                selectedView.value = MainViews.PROJECT_VIEW
-//                                navigationController.navigate(ScreenViews.PROJECTS_SCREEN.name)
-//                                GlobalConfig.areTokenExist = true
                             }
                         ) {
                             Icon(Icons.Filled.List, contentDescription = null)
@@ -200,16 +153,6 @@ fun App() {
                     }
                 }
             },
-//            drawerGesturesEnabled = true,
-//            drawerContent = {
-//                Column {
-//                    Text("Item 1")
-//                    Text("Item 2")
-//                    Text("Item 3")
-//                }
-//            }
-
-
         ) { innerPadding ->
 
             when(selectedSreenView.value){
@@ -321,25 +264,15 @@ fun main(){
 
     checkAndCreateDatabase()
 
-    val lifecycle = LifecycleRegistry()
-
-    val rootComponentContext = DefaultComponentContext(lifecycle = lifecycle)
-
     application {
 
         val windowState = rememberWindowState(WindowPlacement.Maximized)
-        LifecycleController(lifecycle, windowState)
 
-        // Restore configuration from file
-//        readGlobalConfig()
         if(readConfigValue("accessToken") == ""){
             AuthManager.authenticateUser()
         }
 
         val isOpen = remember { mutableStateOf(true) }
-        var windowScope: FrameWindowScope
-
-//    val image: Image = BufferedImage()// Toolkit.getDefaultToolkit().getImage(url)
 
         if(isOpen.value) {
             Window(
@@ -349,13 +282,7 @@ fun main(){
                     isOpen.value = false
                 }) { //  ::exitApplication
                 mainWindow = this
-
-                CompositionLocalProvider(LocalComponentContext provides rootComponentContext) {
-                    ProvideComponentContext(rootComponentContext) {
-                        App()
-                    }
-                }
-//                App()
+                App()
             }
         }
 
@@ -392,56 +319,12 @@ enum class ScreenViews(
         label = "Home",
         icon = Icons.Filled.Home
     ),
-    APPUSERS_SCREEN(
-        label = "App Users",
-        icon = Icons.Filled.Person
-    ),
     PROJECTS_SCREEN(
         label = "Projects",
         icon = Icons.Filled.ShoppingCart
-    ),
-    NOTIFICATIONS_SCREEN(
-        label = "Notifications",
-        icon = Icons.Filled.Notifications
     ),
     SETTINGS_SCREEN(
         label = "Config",
         icon = Icons.Filled.Settings
     ),
-    PROFILE_SCREEN(
-        label = "User Profile",
-        icon = Icons.Filled.AccountCircle
-    )
 }
-
-@Composable
-fun customNavigationHost(
-    navigationController: NavigationController
-) {
-    NavigationHost(navigationController) {
-        composable(ScreenViews.HOME_SCREEN.name) {
-            Text("Home Screen")
-        }
-
-        composable(ScreenViews.APPUSERS_SCREEN.name) {
-
-        }
-
-        composable(ScreenViews.PROJECTS_SCREEN.name) {
-            ProjectList()
-        }
-
-        composable(ScreenViews.NOTIFICATIONS_SCREEN.name) {
-            Text("Notifications Screen")
-        }
-
-        composable(ScreenViews.SETTINGS_SCREEN.name) {
-            Text("Settings Screen")
-        }
-
-        composable(ScreenViews.PROFILE_SCREEN.name) {
-            Text("Profile Screen")
-        }
-    }.build()
-}
-
